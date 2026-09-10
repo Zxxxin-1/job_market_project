@@ -1,0 +1,66 @@
+# ===================== Neo4j Cypher 查询示例【岗位招聘知识图谱】 =====================
+# 对应代码：build_neo4j_kg.py
+# 节点标签：Job(岗位), Company(公司), City(城市), Skill(技能)
+# 关系类型：
+#   BELONG_TO : Job -> Company 岗位属于哪家公司
+#   LOCATED_IN: Job -> City    岗位所在城市
+#   REQUIRE_SKILL: Job -> Skill 岗位需要的技能
+# ====================================================================================
+
+# 1. 清空全部图谱（重建数据前执行）
+MATCH (n) DETACH DELETE n;
+
+# 2. 查询所有岗位节点，展示薪资、学历、经验
+MATCH (j:Job)
+RETURN j.id, j.job_name, j.salary_min, j.salary_max, j.experience, j.education;
+
+# 3. 查询岗位、所属公司、所在城市
+MATCH (j:Job)-[:BELONG_TO]->(c:Company), (j)-[:LOCATED_IN]->(city:City)
+RETURN j.job_name, c.name, city.name;
+
+# 4. 查询岗位以及它需要的技能（核心查询，把技能聚合为列表）
+MATCH (j:Job)-[r:REQUIRE_SKILL]->(s:Skill)
+RETURN j.job_name, collect(s.name) AS skill_list;
+
+# 5. 查询需要Python技能的岗位（技能反向匹配）
+MATCH (s:Skill{name:"Python"})<-[r:REQUIRE_SKILL]-(j:Job)
+RETURN j.job_name, j.salary_min, j.salary_max;
+
+# 6. 统计各类节点数量
+MATCH (n) RETURN labels(n)[0] AS node_type, count(n) AS count;
+
+# 7. 统计所有关系数量
+MATCH ()-[r]->() RETURN type(r) AS rel_type, count(r) AS count;
+
+# 8. 热门技能TOP10（哪些技能被岗位要求最多）
+MATCH (s:Skill)<-[:REQUIRE_SKILL]-(j:Job)
+RETURN s.name, count(j) AS job_count
+ORDER BY job_count DESC LIMIT 10;
+
+# 9. 按城市分组，统计岗位数量
+MATCH (j:Job)-[:LOCATED_IN]->(c:City)
+RETURN c.name, count(j) AS job_count
+ORDER BY job_count DESC;
+
+# 10. 查询高薪岗位（最低薪资大于15k）
+MATCH (j:Job) WHERE j.salary_min > 15
+RETURN j.job_name, j.salary_min, j.salary_max, j.education, j.experience;
+
+# 11. 查询某公司下全部岗位
+MATCH (c:Company{name:"字节跳动"})<-[:BELONG_TO]-(j:Job)
+RETURN j.job_name, j.salary_min, j.salary_max;
+
+# 12. 多条件组合查询：北京 + 需要Java技能的岗位
+MATCH (j:Job)-[:LOCATED_IN]->(city:City{name:"北京"}),
+      (j)-[:REQUIRE_SKILL]->(s:Skill{name:"Java"})
+RETURN j.job_name, j.salary_min, j.salary_max;
+
+# 13. 查询一个岗位完整信息：岗位名、公司、城市、所需技能
+MATCH (j:Job{job_name:"Java后端开发工程师"})
+OPTIONAL MATCH (j)-[:BELONG_TO]->(com:Company)
+OPTIONAL MATCH (j)-[:LOCATED_IN]->(city:City)
+OPTIONAL MATCH (j)-[:REQUIRE_SKILL]->(sk:Skill)
+RETURN j.job_name, com.name, city.name, collect(sk.name) AS skill_list;
+
+# 14. 全图可视化查询（返回全部节点与关系，图谱预览）
+MATCH (n)-[r]->(m) RETURN n,r,m LIMIT 100;

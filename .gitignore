@@ -1,5 +1,16 @@
-config.py
+# 日志文件
 *.log
+logs/
+
+# Python缓存
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+
+# 临时输出文件
 temp_output/
+
+# 环境文件夹
+venv/
+.venv/

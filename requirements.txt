@@ -1,0 +1,5 @@
+flask==2.3.3
+pymysql==1.1.0
+neo4j==5.18.0
+pandas==2.1.4
+numpy==1.26.2
