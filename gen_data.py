@@ -50,7 +50,7 @@ for _ in range(250):
 df = pd.DataFrame(rows)
 csv_path = "./data/ai_ds_jobs.csv"
 df.to_csv(csv_path, encoding="utf‑8‑sig", index=False)
-logger.info(f"✅数据集生成完毕，路径 {csv_path}，共 {len(df)} 条")
+logger.info(f"数据集生成完毕，路径 {csv_path}，共 {len(df)} 条")
 
 
 def insert_csv_to_ai_ds_jobs():
@@ -85,7 +85,7 @@ def insert_csv_to_ai_ds_jobs():
             ))
         cursor.executemany(insert_sql, data_list)
         conn.commit()
-        logger.info(f"✅成功插入 {len(data_list)} 条模拟数据到 ai_ds_jobs")
+        logger.info(f"成功插入 {len(data_list)} 条模拟数据到 ai_ds_jobs")
     except Exception as e:
         logger.error(f"插入失败：{e}")
         conn.rollback()
@@ -134,7 +134,7 @@ def get_job_list_from_ai_ds_jobs():
                 "skill": row.get("skill_tags", "") or ""
             }
             job_list.append(item)
-        logger.info(f"✅生成标准job_list，共 {len(job_list)} 条")
+        logger.info(f"生成标准job_list，共 {len(job_list)} 条")
         return job_list
     except Exception as e:
         logger.error(f"读取mysql失败：{e}")
@@ -151,7 +151,7 @@ if __name__ == "__main__":
     job_list = get_job_list_from_ai_ds_jobs()
 
     if len(job_list) > 0:
-        print("\n=====样例job_list第一条（发给张鑫测试）=====")
+        print("\n=====样例job_list第一条）=====")
         import pprint
         pprint.pprint(job_list[0])
 

@@ -88,7 +88,7 @@ def batch_insert_mysql(df):
         if len(insert_list) > 0:
             cursor.executemany(insert_sql, insert_list)
             conn.commit()
-            logger.info(f"✅批量入库成功，共写入 {cursor.rowcount} 条岗位数据")
+            logger.info(f"批量入库成功，共写入 {cursor.rowcount} 条岗位数据")
         else:
             logger.warning("没有可写入的数据！")
 
@@ -105,7 +105,7 @@ def batch_insert_mysql(df):
 
 
 def main():
-    csv_path = os.path.join("data", "jobs.csv")
+    csv_path = os.path.join("data", "ai_ds_jobs.csv")
     if not os.path.exists(csv_path):
         logger.error(f"找不到数据集文件 {csv_path}！请把csv放到data文件夹下")
         return

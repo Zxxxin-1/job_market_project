@@ -6,11 +6,11 @@ NEO4J_CONFIG = {
     "password": "11210222"  
 }
 
-# MySQL 数据库配置（留给组员后续填写）
+# MySQL 数据库配置
 MYSQL_CONFIG = {
     "host": "127.0.0.1",
     "port": 3306,
     "user": "root",
-    "password": "a2020113913",
+    "password": "123456",
     "database": "job_market"
 }

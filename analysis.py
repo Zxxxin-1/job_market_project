@@ -1,5 +1,3 @@
-
-
 import pymysql
 import pandas as pd
 from config import MYSQL_CONFIG

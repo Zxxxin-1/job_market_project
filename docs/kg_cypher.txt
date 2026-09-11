@@ -1,5 +1,4 @@
 # ===================== Neo4j Cypher 查询示例【岗位招聘知识图谱】 =====================
-# 对应代码：build_neo4j_kg.py
 # 节点标签：Job(岗位), Company(公司), City(城市), Skill(技能)
 # 关系类型：
 #   BELONG_TO : Job -> Company 岗位属于哪家公司
@@ -7,7 +6,7 @@
 #   REQUIRE_SKILL: Job -> Skill 岗位需要的技能
 # ====================================================================================
 
-# 1. 清空全部图谱（重建数据前执行）
+# 1. 清空全部图谱
 MATCH (n) DETACH DELETE n;
 
 # 2. 查询所有岗位节点，展示薪资、学历、经验
@@ -62,5 +61,5 @@ OPTIONAL MATCH (j)-[:LOCATED_IN]->(city:City)
 OPTIONAL MATCH (j)-[:REQUIRE_SKILL]->(sk:Skill)
 RETURN j.job_name, com.name, city.name, collect(sk.name) AS skill_list;
 
-# 14. 全图可视化查询（返回全部节点与关系，图谱预览）
+# 14. 全图可视化查询（返回全部节点与关系）
 MATCH (n)-[r]->(m) RETURN n,r,m LIMIT 100;

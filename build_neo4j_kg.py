@@ -4,7 +4,7 @@ NEO4J_URI = NEO4J_CONFIG["uri"]
 NEO4J_USER = NEO4J_CONFIG["user"]
 NEO4J_PWD = NEO4J_CONFIG["password"]
 from logger_util import logger
-
+from gen_data import get_job_list_from_ai_ds_jobs
 mock_job_data = [
     {
         "id": 1,
@@ -245,19 +245,16 @@ mock_job_data = [
         "education": "本科",
         "skill_tags": ["Python", "ECharts", "Tableau", "数据大屏"],
         "industry": "互联网"
-    }
+    },
 ]
 
-
 def clear_graph(session):
-    """清空图谱所有节点与关系"""
-    cypher = "MATCH (n) DETACH DELETE n;"
-    session.run(cypher)
-    logger.info("图谱已清空")
-
+    #清空图谱所有节点、关系，并且删除Job唯一性约束
+    session.run("MATCH (n) DETACH DELETE n;")
+    session.run("DROP CONSTRAINT job_id_constraint IF EXISTS;")
+    logger.info("图谱节点清空，Job唯一性约束已删除")
 
 def create_job_node(session, job):
-    """创建岗位节点（完整字段）"""
     cypher = """
     MERGE (j:Job{
         id:$id,
@@ -271,41 +268,42 @@ def create_job_node(session, job):
     """
     session.run(cypher, parameters=job)
 
-
 def create_company_relation(session, job):
-    """公司节点 + 岗位归属关系"""
+    #公司节点 + 岗位归属关系
     cypher = """
     MERGE (c:Company{name:$company_name})
-    MERGE (j:Job{id:$id})-[:BELONG_TO]->(c)
+    WITH c
+    MATCH (j:Job{id:$id})
+    MERGE (j)-[:BELONG_TO]->(c)
     """
     params = {"company_name": job["company_name"], "id": job["id"]}
     session.run(cypher, parameters=params)
 
-
 def create_city_relation(session, job):
-    """城市节点 + 岗位地理位置关系"""
+    #城市节点 + 岗位地理位置关系
     cypher = """
     MERGE (city:City{name:$city})
-    MERGE (j:Job{id:$id})-[:LOCATED_IN]->(city)
+    WITH city
+    MATCH (j:Job{id:$id})
+    MERGE (j)-[:LOCATED_IN]->(city)
     """
     params = {"city": job["city"], "id": job["id"]}
     session.run(cypher, parameters=params)
 
-
 def create_skill_relation(session, job):
-    """技能节点 + 岗位技能需求关系"""
+    #技能节点 + 岗位技能需求关系
     job_id = job["id"]
     for skill_name in job["skill_tags"]:
         cypher = """
         MERGE (s:Skill{name:$skill_name})
-        MERGE (j:Job{id:$job_id})-[:REQUIRE_SKILL]->(s)
+        WITH s
+        MATCH (j:Job{id:$job_id})
+        MERGE (j)-[:REQUIRE_SKILL]->(s)
         """
         params = {"skill_name": skill_name, "job_id": job_id}
         session.run(cypher, parameters=params)
 
-
 def count_graph_stat(session):
-    """图谱数据统计汇总"""
     total_nodes = session.run("MATCH(n) RETURN count(n) AS total").single()["total"]
     total_rels = session.run("MATCH ()-[r]->() RETURN count(r) AS total").single()["total"]
     job_num = session.run("MATCH (j:Job) RETURN count(j) AS num").single()["num"]
@@ -316,9 +314,7 @@ def count_graph_stat(session):
     logger.info(f"总节点数：{total_nodes} | 总关系数：{total_rels}")
     logger.info(f"岗位数：{job_num} | 公司数：{company_num} | 城市数：{city_num} | 技能数：{skill_num}")
 
-
 def build_graph(job_list):
-    """图谱构建主函数"""
     driver = None
     try:
         driver = GraphDatabase.driver(NEO4J_URI, auth=basic_auth(NEO4J_USER, NEO4J_PWD))
@@ -327,8 +323,19 @@ def build_graph(job_list):
             clear_graph(session)
             total = len(job_list)
             success_count = 0
-            for job in job_list:
+            for idx, job in enumerate(job_list):
                 try:
+                    if "salary" in job and "skill" in job:
+                        job["id"] = idx + 1
+                        salary_str = job["salary"]
+                        salary_str = salary_str.replace("‑", "-").replace("k","").strip()
+                        s_part = salary_str.split("-")
+                        job["salary_min"] = int(s_part[0]) * 1000
+                        job["salary_max"] = int(s_part[1]) * 1000
+                        job["skill_tags"] = job["skill"].split(",")
+                    
+                    if "industry" not in job:
+                        job["industry"] = ""
                     create_job_node(session, job)
                     create_company_relation(session, job)
                     create_city_relation(session, job)
@@ -346,25 +353,16 @@ def build_graph(job_list):
             driver.close()
             logger.info("Neo4j连接已关闭")
 
-
-def load_data_from_mysql(rows: list[dict] = None) -> list[dict]:
-    """
-    从MySQL读取KG原始数据【预留对接接口】
-    :param rows: 预留参数，李哲传入mysql查询结果 list[dict]
-                 rows=None时使用本地mock数据调试
-    :return: 标准化岗位列表，直接供给build_graph使用
-    """
-    if rows is not None:
-        logger.info("收到外部传入MySQL真实数据")
-        return rows
-
-    logger.info("当前加载Mock模拟岗位数据，等待李哲MySQL接口对接")
-    return mock_job_data
-
+def load_data_from_mysql(use_mock: bool = False) -> list[dict]:
+    #从MySQL加载岗位数据
+    if use_mock:
+        logger.info("当前加载Mock模拟岗位数据")
+        return mock_job_data
+    else:
+        logger.info("调用gen_data，从MySQL读取真实岗位数据")
+        job_list = get_job_list_from_ai_ds_jobs()
+        return job_list
 
 if __name__ == "__main__":
-    # 李哲完成后，只需要把她查询得到的mysql_rows传入：
-    # mysql_rows = get_mysql_data_from_lizhe()
-    # data = load_data_from_mysql(rows=mysql_rows)
-    data = load_data_from_mysql()
+    data = load_data_from_mysql(use_mock=False)
     build_graph(data)
