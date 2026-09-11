@@ -11,6 +11,6 @@ MYSQL_CONFIG = {
     "host": "127.0.0.1",
     "port": 3306,
     "user": "root",
-    "password": "lz521616",
+    "password": "a2020113913",
     "database": "job_market"
 }

@@ -97,11 +97,7 @@ def insert_csv_to_ai_ds_jobs():
 
 
 def get_job_list_from_ai_ds_jobs():
-    """
-    【对外接口给张鑫调用】
-    返回job_list，key：job_name,company_name,salary,city,education,experience,job_type,skill
-    无welfare；空值返回""；salary拼接为8‑22k；job_type固定"全职"
-    """
+    
     conn = None
     cursor = None
     job_list = []
@@ -159,7 +155,4 @@ if __name__ == "__main__":
         import pprint
         pprint.pprint(job_list[0])
 
-    # 张鑫那边调用方式
-    # from gen_data import get_job_list_from_ai_ds_jobs
-    # job_list = get_job_list_from_ai_ds_jobs()
-    # build_graph(job_list)
+   
