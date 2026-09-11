@@ -40,7 +40,9 @@ python init_mysql.py
 python spider_data.py
 # 3. 构建Neo4j知识图谱（张鑫）
 python build_neo4j_kg.py
-# 4. 启动Flask后端服务（康哲溢）
+# 4. 数据分析统计（陈智鸿）
+python analysis.py
+# 5. 启动Flask后端服务（康哲溢）
 python app.py
 ```
 
